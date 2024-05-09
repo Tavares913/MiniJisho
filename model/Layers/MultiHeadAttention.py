@@ -1,14 +1,16 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 def calculate_attention_values(q, k, v, mask=None):
     d_k = q.shape[-1]
-    weighted_attention_matrix = (q @ k.transpose(-2, -1)) / d_k ** (1/2)
+    weighted_attention_matrix = (q @ k.transpose(-2, -1)) / d_k ** (1 / 2)
     if mask is not None:
         weighted_attention_matrix = weighted_attention_matrix + mask
     weighted_attention_matrix = F.softmax(weighted_attention_matrix, dim=-1)
     values = weighted_attention_matrix @ v
     return values
+
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, embedding_dimension, num_heads):
@@ -34,4 +36,6 @@ class MultiHeadAttention(nn.Module):
         v = v.reshape(batch_size, full_sequence_length, self.num_heads, self.head_dimension).permute(0, 2, 1, 3)
 
         values = calculate_attention_values(q, k, v, mask)
+        values = values.permute(0, 2, 1, 3).reshape(batch_size, full_sequence_length,
+                                                    embedding_dimension)  # reshape back to original
         return values
