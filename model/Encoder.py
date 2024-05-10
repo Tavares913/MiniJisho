@@ -1,41 +1,28 @@
 import torch.nn as nn
 
+from model.Layers.FeedForward import FeedForward
 from model.Layers.MultiHeadAttention import MultiHeadAttention
 from model.Layers.PositionalEncoding import PositionalEncoding
-
-
-class FeedForward(nn.Module):
-    def __init__(self, embedding_dimension, internal_dimension, dropout_prob):
-        super().__init__()
-        self.linear_1 = nn.Linear(embedding_dimension, internal_dimension)
-        self.linear_2 = nn.Linear(internal_dimension, embedding_dimension)
-        self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(dropout_prob)
-
-    def forward(self, x):
-        x = self.linear_1(x)
-        x = self.relu(x)
-        x = self.linear_2(x)
-        x = self.dropout(x)
-        return x
+from model.hyperparameters import processing_device
 
 
 class EncoderLayer(nn.Module):
     def __init__(self, embedding_dimension, num_heads, dropout_prob, feedforward_internal_dimension):
-        super(EncoderLayer, self).__init__()
+        super().__init__()
         self.embedding_dimension = embedding_dimension
         self.num_heads = num_heads
-        self.multi_head_attention = MultiHeadAttention(embedding_dimension=embedding_dimension, num_heads=num_heads)
+        self.multi_head_self_attention = MultiHeadAttention(embedding_dimension=embedding_dimension,
+                                                            num_heads=num_heads)
         self.dropout_1 = nn.Dropout(dropout_prob)
         self.dropout_2 = nn.Dropout(dropout_prob)
-        self.layer_norm_1 = nn.LayerNorm(embedding_dimension)
-        self.layer_norm_2 = nn.LayerNorm(embedding_dimension)
+        self.layer_norm_1 = nn.LayerNorm(embedding_dimension, device=processing_device)
+        self.layer_norm_2 = nn.LayerNorm(embedding_dimension, device=processing_device)
         self.feed_forward = FeedForward(embedding_dimension=embedding_dimension,
                                         internal_dimension=feedforward_internal_dimension, dropout_prob=dropout_prob)
 
     def forward(self, x, self_attention_mask):
         first_skip_x = x.clone()
-        x = self.multi_head_attention(x, self_attention_mask)
+        x = self.multi_head_self_attention(x, self_attention_mask)
         x = self.dropout_1(x)
         x = self.layer_norm_1(x + first_skip_x)
         second_skip_x = x.clone()
@@ -50,7 +37,7 @@ class Encoder(nn.Module):
                  self_attention_mask, dropout_prob, feedforward_internal_dimension):
         super().__init__()
         self.vocab_size = vocab_size
-        self.token_embedding = nn.Embedding(self.vocab_size, embedding_dimension)
+        self.token_embedding = nn.Embedding(self.vocab_size, embedding_dimension, device=processing_device)
         self.positional_encoding = PositionalEncoding(embedding_dimension, full_sequence_length)
         self.self_attention_mask = self_attention_mask
         self.embedding_dropout = nn.Dropout(dropout_prob)

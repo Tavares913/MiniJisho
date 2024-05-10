@@ -1,6 +1,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+from model.hyperparameters import processing_device
+
 
 def calculate_attention_values(q, k, v, mask=None):
     d_k = q.shape[-1]
@@ -18,17 +20,17 @@ class MultiHeadAttention(nn.Module):
         self.embedding_dimension = embedding_dimension
         self.num_heads = num_heads
         self.head_dimension = embedding_dimension // num_heads
-        self.q_layer = nn.Linear(embedding_dimension, embedding_dimension)
-        self.k_layer = nn.Linear(embedding_dimension, embedding_dimension)
-        self.v_layer = nn.Linear(embedding_dimension, embedding_dimension)
-        self.last_linear_layer = nn.Linear(embedding_dimension, embedding_dimension)
+        self.q_layer = nn.Linear(embedding_dimension, embedding_dimension, device=processing_device)
+        self.k_layer = nn.Linear(embedding_dimension, embedding_dimension, device=processing_device)
+        self.v_layer = nn.Linear(embedding_dimension, embedding_dimension, device=processing_device)
+        self.last_linear_layer = nn.Linear(embedding_dimension, embedding_dimension, device=processing_device)
 
-    def forward(self, x, mask):
-        batch_size, full_sequence_length, embedding_dimension = x.shape
+    def forward(self, cur_encoding, mask, cross_encoding=None):
+        batch_size, full_sequence_length, embedding_dimension = cur_encoding.shape
 
-        q = self.q_layer(x)
-        k = self.k_layer(x)
-        v = self.v_layer(x)
+        q = self.q_layer(cur_encoding) if cross_encoding is None else self.q_layer(cross_encoding)
+        k = self.k_layer(cur_encoding)
+        v = self.v_layer(cur_encoding)
 
         # shape q, k, v to be (batch_size, num_heads, full_sequence_length, head_dimension)
         q = q.reshape(batch_size, full_sequence_length, self.num_heads, self.head_dimension).permute(0, 2, 1, 3)
