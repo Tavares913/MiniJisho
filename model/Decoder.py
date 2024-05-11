@@ -40,13 +40,11 @@ class DecoderLayer(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(self, vocab_size, embedding_dimension, full_sequence_length, dropout_prob, num_heads,
-                 feedforward_internal_dimension, num_decoder_layers, self_attention_mask, cross_attention_mask):
+                 feedforward_internal_dimension, num_decoder_layers):
         super().__init__()
         self.vocab_size = vocab_size
         self.embedding_dimension = embedding_dimension
         self.full_sequence_length = full_sequence_length
-        self.self_attention_mask = self_attention_mask
-        self.cross_attention_mask = cross_attention_mask
         self.token_embedding = nn.Embedding(vocab_size, embedding_dimension, device=processing_device)
         self.embedding_dropout = nn.Dropout(dropout_prob)
         self.positional_encoding = PositionalEncoding(embedding_dimension, full_sequence_length)
@@ -55,7 +53,7 @@ class Decoder(nn.Module):
                          feedforward_internal_dimension=feedforward_internal_dimension) for i in
             range(num_decoder_layers)]
 
-    def forward(self, encoder_output, input):
+    def forward(self, encoder_output, input, self_attention_mask, cross_attention_mask):
         # token and positional embedding
         y = self.token_embedding(input)
         positional_encodings = self.positional_encoding()
@@ -63,5 +61,6 @@ class Decoder(nn.Module):
 
         # decoder layers
         for decoder_layer in self.decoder_layers:
-            y = decoder_layer(encoder_output, y, None, None)
+            y = decoder_layer(encoder_output, y, self_attention_mask=self_attention_mask,
+                              cross_attention_mask=cross_attention_mask)
         return y

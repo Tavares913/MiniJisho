@@ -8,7 +8,10 @@ def calculate_attention_values(q, k, v, mask=None):
     d_k = q.shape[-1]
     weighted_attention_matrix = (q @ k.transpose(-2, -1)) / d_k ** (1 / 2)
     if mask is not None:
-        weighted_attention_matrix = weighted_attention_matrix + mask
+        weighted_attention_matrix = weighted_attention_matrix.permute(1, 0, 2,
+                                                                      3) + mask  # move head dimension to the front so dimensions line up to add mask
+        weighted_attention_matrix = weighted_attention_matrix.permute(1, 0, 2,
+                                                                      3)  # move head dimension back to index 1 where it was before
     weighted_attention_matrix = F.softmax(weighted_attention_matrix, dim=-1)
     values = weighted_attention_matrix @ v
     return values

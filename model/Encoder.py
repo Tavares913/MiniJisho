@@ -34,19 +34,18 @@ class EncoderLayer(nn.Module):
 
 class Encoder(nn.Module):
     def __init__(self, vocab_size, embedding_dimension, full_sequence_length, num_heads, num_encoder_layers,
-                 self_attention_mask, dropout_prob, feedforward_internal_dimension):
+                 dropout_prob, feedforward_internal_dimension):
         super().__init__()
         self.vocab_size = vocab_size
         self.token_embedding = nn.Embedding(self.vocab_size, embedding_dimension, device=processing_device)
         self.positional_encoding = PositionalEncoding(embedding_dimension, full_sequence_length)
-        self.self_attention_mask = self_attention_mask
         self.embedding_dropout = nn.Dropout(dropout_prob)
         self.encoder_layers = [
             EncoderLayer(embedding_dimension=embedding_dimension, num_heads=num_heads, dropout_prob=dropout_prob,
                          feedforward_internal_dimension=feedforward_internal_dimension) for i
             in range(num_encoder_layers)]
 
-    def forward(self, japan_tokens):
+    def forward(self, japan_tokens, self_attention_mask):
         # token and positional embedding
         x = self.token_embedding(japan_tokens)
         pos_encoding = self.positional_encoding()
@@ -54,5 +53,5 @@ class Encoder(nn.Module):
 
         # encoder layers
         for encoder_layer in self.encoder_layers:
-            x = encoder_layer(x, self.self_attention_mask)
+            x = encoder_layer(x, self_attention_mask)
         return x
