@@ -31,7 +31,10 @@ class MultiHeadAttention(nn.Module):
     def forward(self, cur_encoding, mask, cross_encoding=None):
         batch_size, full_sequence_length, embedding_dimension = cur_encoding.shape
 
-        q = self.q_layer(cur_encoding) if cross_encoding is None else self.q_layer(cross_encoding)
+        if cross_encoding is None:
+            q = self.q_layer(cur_encoding)
+        else:
+            q = self.q_layer(cross_encoding)
         k = self.k_layer(cur_encoding)
         v = self.v_layer(cur_encoding)
 

@@ -1,3 +1,4 @@
+import torch.nn.functional as F
 import torch.optim
 
 from model.Transformer import Transformer
@@ -52,16 +53,17 @@ def translate_japanese_to_english(japan_sentence):
         encoder_self_attention_mask, decoder_self_attention_mask, decoder_cross_attention_mask = create_masks(
             [english_sentence_untokenized], [japan_sentence_untokenized])
 
+        model.eval()
         logits, _ = model(encoder_input=japan_sentence_tokenized_input, decoder_input_x=x_eng_sentence_tokenized_input,
                           decoder_input_y=None,
                           encoder_self_attention_mask=encoder_self_attention_mask,
                           decoder_self_attention_mask=decoder_self_attention_mask,
                           decoder_cross_attention_mask=decoder_cross_attention_mask)
-
-        next_token_probability_distribution = logits[0][char_idx]
-        next_token = index_to_english_characters[torch.argmax(next_token_probability_distribution).item()]
-        if next_token == PADDING_TOKEN or next_token == START_TOKEN:
-            print("Wrong next token" + next_token)
+        next_token_probability_distribution_raw = logits[0][
+            char_idx]  # get the first (and only) batch + current timestep
+        next_token_probability_distribution_softmax = F.softmax(next_token_probability_distribution_raw, dim=-1)
+        next_token_index = torch.multinomial(next_token_probability_distribution_softmax, num_samples=1)
+        next_token = index_to_english_characters[next_token_index.item()]
         english_sentence_untokenized = english_sentence_untokenized + next_token
         if (next_token == END_TOKEN or next_token == START_TOKEN or next_token == PADDING_TOKEN):
             break

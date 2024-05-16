@@ -61,9 +61,6 @@ japanese_characters_to_index = {v: k for k, v in enumerate(japanese_characters)}
 
 
 def encode(s, dictionary):
-    for i in range(len(s)):
-        if s[i] not in dictionary:
-            print("Wrong" + s[i])
     return [dictionary[c] for c in s]
 
 
@@ -82,10 +79,6 @@ def tokenize_sentence(sentence, dictionary, add_start_token=True, add_end_token=
         add_end_to_tokenize = []
         padding_tokens_to_add = padding_tokens_to_add + 1
 
-    int = add_start_to_tokenize + encode(sentence, dictionary) + add_end_to_tokenize + [dictionary[PADDING_TOKEN]
-                                                                                        for i in
-                                                                                        range(
-                                                                                            padding_tokens_to_add)]
     return torch.tensor(
         add_start_to_tokenize + encode(sentence, dictionary) + add_end_to_tokenize + [dictionary[PADDING_TOKEN]
                                                                                       for i in

@@ -34,8 +34,8 @@ class Transformer(nn.Module):
             loss = F.cross_entropy(logits.reshape(batch_size * full_sequence_length, vocab_size),
                                    decoder_input_y.reshape(
                                        batch_size * full_sequence_length), ignore_index=english_characters_to_index[
-                    PADDING_TOKEN])  # cross entropy requires shape to be (batch, classes) and (batch) respectively
-
+                    PADDING_TOKEN],
+                                   reduction='none')  # cross entropy requires shape to be (batch, classes) and (batch) respectively
         else:
             loss = None
 
